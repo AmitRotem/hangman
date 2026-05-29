@@ -1,6 +1,8 @@
 const ASCII_ALPHABET = Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 const HEBREW_ALPHABET = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת"];
 const SEGMENT_ORDER = ["head", "body", "left-arm", "right-arm", "left-leg", "right-leg", "floor", "pole", "beam", "rope"];
+const BODY_SEGMENTS = SEGMENT_ORDER.slice(0, 6);
+const RTL_LANGUAGE_IDS = new Set(["hebrew", "arabic"]);
 const HEBREW_FINALS = {
   "ך": "כ",
   "ם": "מ",
@@ -104,6 +106,10 @@ function sortLetters(letterList, locale = "en") {
   return [...letterList].sort((first, second) => first.localeCompare(second, locale, { sensitivity: "base" }));
 }
 
+function getLanguageDirection(language = state.language) {
+  return RTL_LANGUAGE_IDS.has(language.id) || ["he", "ar"].includes(language.locale) ? "rtl" : "ltr";
+}
+
 function buildCustomBank(text, languageId, locale = "en") {
   const seenLetters = new Map();
 
@@ -175,6 +181,7 @@ function detectLanguage(text) {
 
 function resetSetupState() {
   dom.setupForm.reset();
+  dom.secretWordInput.dir = "ltr";
   dom.languageValue.textContent = "Waiting for input";
   dom.setupError.textContent = "";
 }
@@ -211,7 +218,18 @@ function switchScreen(nextScreen) {
 
 function renderLanguagePreview() {
   const detectedLanguage = detectLanguage(dom.secretWordInput.value.trim());
+  dom.secretWordInput.dir = getLanguageDirection(detectedLanguage);
   dom.languageValue.textContent = detectedLanguage.label;
+}
+
+function applyBoardDirection() {
+  const direction = getLanguageDirection();
+
+  [dom.wordSlots, dom.letterBank, dom.usedCorrect, dom.usedWrong].forEach((element) => {
+    element.dir = direction;
+  });
+
+  dom.gameLanguageLabel.dir = direction;
 }
 
 function buildTargetLetters(answerChars, languageId) {
@@ -382,19 +400,24 @@ function renderLetterBank() {
 }
 
 function renderHangman() {
-  const visibleSegments = state.status === "won" ? SEGMENT_ORDER.length : state.mistakes;
+  const visibleSegments = state.status === "won"
+    ? BODY_SEGMENTS
+    : SEGMENT_ORDER.slice(0, state.mistakes);
+  const visibleSet = new Set(visibleSegments);
 
   dom.hangmanParts.forEach((segment) => {
-    const segmentIndex = SEGMENT_ORDER.indexOf(segment.dataset.segment);
-    const shouldShow = segmentIndex !== -1 && segmentIndex < visibleSegments;
+    const segmentIndex = visibleSegments.indexOf(segment.dataset.segment);
+    const shouldShow = visibleSet.has(segment.dataset.segment);
+
     segment.dataset.visible = String(shouldShow);
+    segment.style.setProperty("--reveal-order", segmentIndex === -1 ? "0" : String(segmentIndex));
   });
 
   if (state.status === "won") {
     dom.hangmanSvg.dataset.face = "happy";
   } else if (state.status === "lost") {
     dom.hangmanSvg.dataset.face = "sad";
-  } else if (visibleSegments > 0) {
+  } else if (visibleSegments.length > 0) {
     dom.hangmanSvg.dataset.face = "neutral";
   } else {
     dom.hangmanSvg.dataset.face = "none";
@@ -406,6 +429,7 @@ function renderHangman() {
 function renderGame() {
   dom.gameLanguageLabel.textContent = state.language.label;
   dom.statusMessage.textContent = state.statusMessage;
+  applyBoardDirection();
   renderWordSlots();
   renderLetterBank();
   renderUsedBanks();
