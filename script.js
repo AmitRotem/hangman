@@ -2,6 +2,7 @@ const ASCII_ALPHABET = Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 const HEBREW_ALPHABET = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת"];
 const SEGMENT_ORDER = ["head", "body", "left-arm", "right-arm", "left-leg", "right-leg", "floor", "pole", "beam", "rope"];
 const BODY_SEGMENTS = SEGMENT_ORDER.slice(0, 6);
+const GALLOWS_SEGMENTS = SEGMENT_ORDER.slice(BODY_SEGMENTS.length);
 const RTL_LANGUAGE_IDS = new Set(["hebrew", "arabic"]);
 const HEBREW_FINALS = {
   "ך": "כ",
@@ -83,7 +84,7 @@ const state = {
   wrongGuesses: [],
   guessHistory: [],
   mistakes: 0,
-  statusMessage: "Choose a letter to start guessing.",
+  statusMessage: "Pick a letter.",
   status: "idle",
   celebrationTimer: null
 };
@@ -206,7 +207,7 @@ function resetGameState() {
   state.wrongGuesses = [];
   state.guessHistory = [];
   state.mistakes = 0;
-  state.statusMessage = "Choose a letter to start guessing.";
+  state.statusMessage = "Pick a letter.";
   state.status = "idle";
 }
 
@@ -267,7 +268,7 @@ function startGame(rawAnswer) {
   state.language = detectedLanguage;
   state.bank = detectedLanguage.bank.length ? [...detectedLanguage.bank] : buildCustomBank(answer, detectedLanguage.id, detectedLanguage.locale);
   state.targetLetters = targetLetters;
-  state.statusMessage = "Choose a letter to start guessing.";
+  state.statusMessage = "Pick a letter.";
   state.status = "playing";
   switchScreen("game");
   renderGame();
@@ -283,12 +284,12 @@ function finishGame(result) {
   dom.celebrationBanner.classList.remove("hidden");
 
   if (result === "won") {
-    state.statusMessage = "The word is solved. The board is locked.";
-    dom.celebrationBanner.textContent = "Solved. Enjoy the short celebration, then reset for the next round.";
+    state.statusMessage = "Solved.";
+    dom.celebrationBanner.textContent = "Nice work.";
     launchCelebration();
   } else {
-    state.statusMessage = `The word was ${state.answer}.`;
-    dom.celebrationBanner.textContent = "The hangman is complete. Reset to play again.";
+    state.statusMessage = `Answer: ${state.answer}`;
+    dom.celebrationBanner.textContent = "Try again.";
   }
 }
 
@@ -300,7 +301,7 @@ function handleGuess(letter) {
   const canonicalLetter = canonicalizeLetter(letter, state.language.id);
 
   if (state.guessedLetters.has(canonicalLetter)) {
-    state.statusMessage = `${letter} was already used.`;
+    state.statusMessage = "Already used.";
     renderGame();
     return;
   }
@@ -312,11 +313,11 @@ function handleGuess(letter) {
 
   if (isCorrect) {
     state.correctGuesses.push(letter);
-    state.statusMessage = `${letter} is in the word.`;
+    state.statusMessage = "Correct.";
   } else {
     state.wrongGuesses.push(letter);
     state.mistakes = Math.min(state.mistakes + 1, SEGMENT_ORDER.length);
-    state.statusMessage = `${letter} is not in the word.`;
+    state.statusMessage = "Miss.";
   }
 
   if (allLettersFound()) {
@@ -401,15 +402,17 @@ function renderLetterBank() {
 
 function renderHangman() {
   const visibleSegments = state.status === "won"
-    ? BODY_SEGMENTS
+    ? [...BODY_SEGMENTS, ...SEGMENT_ORDER.slice(BODY_SEGMENTS.length, state.mistakes)]
     : SEGMENT_ORDER.slice(0, state.mistakes);
   const visibleSet = new Set(visibleSegments);
 
   dom.hangmanParts.forEach((segment) => {
     const segmentIndex = visibleSegments.indexOf(segment.dataset.segment);
     const shouldShow = visibleSet.has(segment.dataset.segment);
+    const shouldSoftShow = state.status === "won" && GALLOWS_SEGMENTS.includes(segment.dataset.segment) && shouldShow;
 
     segment.dataset.visible = String(shouldShow);
+    segment.dataset.soft = String(shouldSoftShow);
     segment.style.setProperty("--reveal-order", segmentIndex === -1 ? "0" : String(segmentIndex));
   });
 

@@ -7,26 +7,22 @@
   <title>Rope &amp; Letters</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-block">
-        <span class="eyebrow">GitHub Pages Hangman</span>
         <h1>Rope &amp; Letters</h1>
       </div>
-      <p class="topbar-copy">Enter a hidden word, let the game detect its language, and guess through a hand-built hangman scene.</p>
     </header>
 
     <main class="view-stack">
       <section class="panel welcome-panel" data-screen="welcome">
         <div class="hero-layout">
           <div class="hero-copy">
-            <span class="section-tag">Secret Setup</span>
-            <h2>Start with a masked word or phrase.</h2>
-            <p class="lead-copy">This field stays hidden while the first player types. The game reads the text, detects the language automatically, and prepares the matching letter bank before play begins.</p>
+            <h2>New round</h2>
 
             <form id="setup-form" class="setup-form" novalidate>
               <label for="secret-word">Hidden word</label>
@@ -42,18 +38,17 @@
                   spellcheck="false"
                   data-lpignore="true"
                   data-1p-ignore="true"
-                  placeholder="Type the secret word here"
-                  aria-describedby="secret-help language-value setup-error"
+                  placeholder="Enter word"
+                  aria-describedby="language-value setup-error"
                 >
                 <button type="submit" class="primary-button">Start game</button>
               </div>
 
               <div class="setup-meta">
                 <div class="language-pill" aria-live="polite">
-                  <span class="pill-label">Detected language</span>
+                  <span class="pill-label">Language</span>
                   <strong id="language-value">Waiting for input</strong>
                 </div>
-                <p id="secret-help" class="subtle-copy">The input uses a concealed field so the answer stays private while it is being entered.</p>
               </div>
 
               <p id="setup-error" class="error-copy" aria-live="polite"></p>
@@ -84,7 +79,6 @@
               <circle cx="220" cy="126" r="3.5" class="poster-face"></circle>
               <path d="M196 144 Q210 154 224 144" class="poster-smile"></path>
             </svg>
-            <p class="illustration-caption">Wrong guesses reveal the scene in this order: stick figure first, then floor, pole, overhead beam, and rope.</p>
           </div>
         </div>
       </section>
@@ -108,7 +102,6 @@
               <div class="section-header">
                 <div>
                   <h3 id="letter-bank-title">Letter bank</h3>
-                  <p>Pick one letter at a time.</p>
                 </div>
               </div>
               <div id="letter-bank" class="letter-bank" role="group" aria-label="Available letters"></div>
@@ -178,10 +171,6 @@
               <div class="legend-row">
                 <span>Wrong guesses</span>
                 <strong id="mistake-count">0 / 10</strong>
-              </div>
-              <div class="legend-row">
-                <span>Finish state</span>
-                <strong>Happy face on win, sad face on loss</strong>
               </div>
             </div>
 
