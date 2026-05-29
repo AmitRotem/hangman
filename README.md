@@ -1,33 +1,17 @@
 # Rope & Letters
 
-A static hangman game for GitHub Pages.
+## For Players
 
-## Files
+- A simple hangman game.
+- Supports English and Hebrew.
+- Guess letters from the on-screen bank or with the keyboard.
+- Letters are hidden, but spaces, numbers, commas, and other non-letter characters stay visible.
+- Use one language per word or phrase. Do not mix Hebrew and English in the same answer.
 
-- `index.html` contains the welcome screen and the game screen.
-- `styles.css` contains the full visual design and animation styles.
-- `script.js` contains the language detection, game state, hangman drawing, and reset flow.
+## Dev Notes
 
-## Local preview
-
-From the project root, run one of these commands:
-
-```powershell
-py -m http.server 4173
-```
-
-or
-
-```powershell
-python -m http.server 4173
-```
-
-Then open `http://localhost:4173`.
-
-## GitHub Pages
-
-1. Push these files to the repository root.
-2. In GitHub, open `Settings > Pages`.
-3. Set the source to `Deploy from a branch`.
-4. Choose the main branch and the root folder.
-5. Save, then wait for GitHub Pages to publish the site.
+- The welcome input is masked without using a password field, so the browser does not treat the secret word like a saved login value.
+- On Windows, the setup field uses a readonly capture flow to avoid OS autocomplete and writing-suggestion popups while still showing masked dots.
+- Language detection is used to choose the correct letter bank and text direction.
+- The drawing is an SVG hangman built in steps, so each wrong guess reveals one more part.
+- `smoke-tests.html` is a small browser test page for the shared logic in `logic.js`, including language detection and keyboard matching.

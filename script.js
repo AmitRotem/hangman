@@ -1,59 +1,24 @@
-const ASCII_ALPHABET = Array.from("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-const HEBREW_ALPHABET = ["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ", "ק", "ר", "ש", "ת"];
+const logic = window.HangmanLogic;
+
+if (!logic) {
+  throw new Error("HangmanLogic is not available.");
+}
+
+const platform = [navigator.userAgentData?.platform, navigator.platform, navigator.userAgent].find((value) => typeof value === "string") ?? "";
+const useReadonlySetupCapture = /Windows/i.test(platform);
+const supportsNativeSecretMask = typeof CSS !== "undefined" && CSS.supports("-webkit-text-security", "disc");
+
 const SEGMENT_ORDER = ["head", "body", "left-arm", "right-arm", "left-leg", "right-leg", "floor", "pole", "beam", "rope"];
 const BODY_SEGMENTS = SEGMENT_ORDER.slice(0, 6);
 const GALLOWS_SEGMENTS = SEGMENT_ORDER.slice(BODY_SEGMENTS.length);
-const RTL_LANGUAGE_IDS = new Set(["hebrew", "arabic"]);
 const SOFT_GALLOWS_STROKE = "rgba(190, 220, 255, 0.42)";
-const HEBREW_FINALS = {
-  "ך": "כ",
-  "ם": "מ",
-  "ן": "נ",
-  "ף": "פ",
-  "ץ": "צ"
-};
-
-const LANGUAGE_PROFILES = [
-  {
-    id: "english",
-    label: "English",
-    scriptPattern: /\p{Script=Latin}/u,
-    bank: ASCII_ALPHABET,
-    locale: "en"
-  },
-  {
-    id: "hebrew",
-    label: "עברית",
-    scriptPattern: /\p{Script=Hebrew}/u,
-    bank: HEBREW_ALPHABET,
-    locale: "he"
-  },
-  {
-    id: "arabic",
-    label: "العربية",
-    scriptPattern: /\p{Script=Arabic}/u,
-    locale: "ar"
-  },
-  {
-    id: "cyrillic",
-    label: "Кириллица",
-    scriptPattern: /\p{Script=Cyrillic}/u,
-    locale: "ru"
-  },
-  {
-    id: "greek",
-    label: "Ελληνικά",
-    scriptPattern: /\p{Script=Greek}/u,
-    locale: "el"
-  }
-];
-
-const LETTER_PATTERN = /\p{L}/u;
 const dom = {
   welcomePanel: document.querySelector('[data-screen="welcome"]'),
   gamePanel: document.querySelector('[data-screen="game"]'),
   setupForm: document.querySelector("#setup-form"),
+  secretWordField: document.querySelector("[data-secret-field]"),
   secretWordInput: document.querySelector("#secret-word"),
+  secretWordMask: document.querySelector("#secret-word-mask"),
   languageValue: document.querySelector("#language-value"),
   setupError: document.querySelector("#setup-error"),
   gameLanguageLabel: document.querySelector("#game-language-label"),
@@ -85,105 +50,143 @@ const state = {
   mistakes: 0,
   statusMessage: "Pick a letter.",
   status: "idle",
-  celebrationTimer: null
+  celebrationTimer: null,
+  setupAnswer: ""
 };
 
 function isGuessableCharacter(character) {
-  return LETTER_PATTERN.test(character);
+  return logic.isGuessableCharacter(character);
 }
 
 function canonicalizeLetter(character, languageId = state.language.id) {
-  const uppercased = character.toLocaleUpperCase();
-
-  if (languageId === "hebrew") {
-    return HEBREW_FINALS[uppercased] ?? uppercased;
-  }
-
-  return uppercased;
-}
-
-function sortLetters(letterList, locale = "en") {
-  return [...letterList].sort((first, second) => first.localeCompare(second, locale, { sensitivity: "base" }));
+  return logic.canonicalizeLetter(character, languageId);
 }
 
 function getLanguageDirection(language = state.language) {
-  return RTL_LANGUAGE_IDS.has(language.id) || ["he", "ar"].includes(language.locale) ? "rtl" : "ltr";
+  return logic.getLanguageDirection(language);
 }
 
 function buildCustomBank(text, languageId, locale = "en") {
-  const seenLetters = new Map();
-
-  for (const character of text) {
-    if (!isGuessableCharacter(character)) {
-      continue;
-    }
-
-    const canonicalLetter = canonicalizeLetter(character, languageId);
-
-    if (!seenLetters.has(canonicalLetter)) {
-      seenLetters.set(canonicalLetter, canonicalLetter);
-    }
-  }
-
-  return sortLetters([...seenLetters.values()], locale);
+  return logic.buildCustomBank(text, languageId, locale);
 }
 
 function detectLanguage(text) {
-  const letters = [...text].filter(isGuessableCharacter);
+  return logic.detectLanguage(text);
+}
 
-  if (!letters.length) {
-    return {
-      id: "auto",
-      label: "Waiting for input",
-      bank: [],
-      locale: "en"
-    };
+function formatMaskedSecret(value) {
+  return [...value].map((character) => (/\s/u.test(character) ? character : "•")).join("");
+}
+
+function renderSecretWordMask() {
+  const value = state.setupAnswer;
+  const hasValue = value.length > 0;
+  const captureMode = useReadonlySetupCapture ? "readonly" : supportsNativeSecretMask ? "native" : "overlay";
+
+  dom.secretWordField.dataset.masked = String(hasValue);
+  dom.secretWordField.dataset.captureMode = captureMode;
+  dom.secretWordField.dir = dom.secretWordInput.dir;
+  dom.secretWordInput.classList.toggle("is-masked", hasValue);
+
+  if (captureMode === "readonly") {
+    dom.secretWordInput.classList.remove("use-native-mask");
+    dom.secretWordInput.value = hasValue ? formatMaskedSecret(value) : "";
+    dom.secretWordMask.textContent = "";
+    return;
   }
 
-  const matches = LANGUAGE_PROFILES.filter((profile) => letters.some((character) => profile.scriptPattern.test(character)));
+  dom.secretWordInput.classList.toggle("use-native-mask", captureMode === "native" && hasValue);
+  dom.secretWordInput.value = value;
+  dom.secretWordMask.dir = dom.secretWordInput.dir;
+  dom.secretWordMask.textContent = captureMode === "overlay" && hasValue ? formatMaskedSecret(value) : "";
+  dom.secretWordMask.scrollLeft = dom.secretWordInput.scrollLeft;
+}
 
-  if (matches.length > 1) {
-    return {
-      id: "mixed",
-      label: "Mixed / custom",
-      bank: buildCustomBank(text, "mixed"),
-      locale: "en"
-    };
+function syncSetupPreview() {
+  renderLanguagePreview();
+  renderSecretWordMask();
+}
+
+function setSetupAnswer(nextValue) {
+  state.setupAnswer = nextValue;
+  syncSetupPreview();
+}
+
+function trimLastSetupCharacter() {
+  setSetupAnswer(Array.from(state.setupAnswer).slice(0, -1).join(""));
+}
+
+function appendSetupCharacter(character) {
+  setSetupAnswer(`${state.setupAnswer}${character}`);
+}
+
+function handleSetupKeydown(event) {
+  if (!useReadonlySetupCapture) {
+    return;
   }
 
-  const match = matches[0];
-
-  if (!match) {
-    return {
-      id: "custom",
-      label: "Custom letters",
-      bank: buildCustomBank(text, "custom"),
-      locale: "en"
-    };
+  if (state.screen !== "welcome" || event.defaultPrevented) {
+    return;
   }
 
-  if (match.id === "english" && !letters.every((character) => /[A-Za-z]/.test(character))) {
-    return {
-      id: "latin",
-      label: "Latin",
-      bank: buildCustomBank(text, "latin", match.locale),
-      locale: match.locale
-    };
+  if (event.altKey || event.ctrlKey || event.metaKey) {
+    return;
   }
 
-  return {
-    id: match.id,
-    label: match.label,
-    bank: match.bank ? [...match.bank] : buildCustomBank(text, match.id, match.locale),
-    locale: match.locale
-  };
+  if (event.key === "Enter") {
+    event.preventDefault();
+    dom.setupForm.requestSubmit();
+    return;
+  }
+
+  if (event.key === "Backspace") {
+    event.preventDefault();
+    setSetupError("");
+    trimLastSetupCharacter();
+    return;
+  }
+
+  if (event.key === "Delete") {
+    event.preventDefault();
+    setSetupError("");
+    setSetupAnswer("");
+    return;
+  }
+
+  if (event.key.length === 1) {
+    event.preventDefault();
+    setSetupError("");
+    appendSetupCharacter(event.key);
+  }
+}
+
+function handleSetupPaste(event) {
+  if (!useReadonlySetupCapture) {
+    return;
+  }
+
+  if (state.screen !== "welcome") {
+    return;
+  }
+
+  const pastedText = event.clipboardData?.getData("text");
+
+  if (!pastedText) {
+    return;
+  }
+
+  event.preventDefault();
+  setSetupError("");
+  setSetupAnswer(`${state.setupAnswer}${pastedText}`);
 }
 
 function resetSetupState() {
   dom.setupForm.reset();
+  state.setupAnswer = "";
   dom.secretWordInput.dir = "ltr";
   dom.languageValue.textContent = "Waiting for input";
   dom.setupError.textContent = "";
+  renderSecretWordMask();
 }
 
 function clearCelebration() {
@@ -217,7 +220,7 @@ function switchScreen(nextScreen) {
 }
 
 function renderLanguagePreview() {
-  const detectedLanguage = detectLanguage(dom.secretWordInput.value.trim());
+  const detectedLanguage = detectLanguage(state.setupAnswer.trim());
   dom.secretWordInput.dir = getLanguageDirection(detectedLanguage);
   dom.languageValue.textContent = detectedLanguage.label;
 }
@@ -233,11 +236,7 @@ function applyBoardDirection() {
 }
 
 function buildTargetLetters(answerChars, languageId) {
-  return new Set(
-    answerChars
-      .filter(isGuessableCharacter)
-      .map((character) => canonicalizeLetter(character, languageId))
-  );
+  return logic.buildTargetLetters(answerChars, languageId);
 }
 
 function setSetupError(message) {
@@ -271,6 +270,7 @@ function startGame(rawAnswer) {
   state.status = "playing";
   switchScreen("game");
   renderGame();
+  dom.gamePanel.focus();
 }
 
 function allLettersFound() {
@@ -288,7 +288,7 @@ function finishGame(result) {
     launchCelebration();
   } else {
     state.statusMessage = `Answer: ${state.answer}`;
-    dom.celebrationBanner.textContent = "Try again.";
+    dom.celebrationBanner.textContent = "Too bad.";
   }
 }
 
@@ -326,6 +326,36 @@ function handleGuess(letter) {
   }
 
   renderGame();
+}
+
+function resolveKeyboardGuess(key) {
+  return logic.resolveKeyboardGuess(key, state.bank, state.language.id);
+}
+
+function handleKeyboardGuess(event) {
+  if (state.screen !== "game" || state.status !== "playing") {
+    return;
+  }
+
+  if (event.altKey || event.ctrlKey || event.metaKey) {
+    return;
+  }
+
+  const target = event.target;
+  if (target instanceof HTMLElement) {
+    const tagName = target.tagName;
+    if (target.isContentEditable || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT") {
+      return;
+    }
+  }
+
+  const guessedLetter = resolveKeyboardGuess(event.key);
+  if (!guessedLetter) {
+    return;
+  }
+
+  event.preventDefault();
+  handleGuess(guessedLetter);
 }
 
 function renderWordSlots() {
@@ -484,13 +514,22 @@ function returnToWelcome() {
 dom.setupForm.addEventListener("submit", (event) => {
   event.preventDefault();
   setSetupError("");
-  startGame(dom.secretWordInput.value);
+  startGame(state.setupAnswer);
 });
 
 dom.secretWordInput.addEventListener("input", () => {
+  if (useReadonlySetupCapture) {
+    return;
+  }
+
+  state.setupAnswer = dom.secretWordInput.value;
   setSetupError("");
-  renderLanguagePreview();
+  syncSetupPreview();
 });
+
+dom.secretWordInput.addEventListener("keydown", handleSetupKeydown);
+dom.secretWordInput.addEventListener("paste", handleSetupPaste);
+dom.secretWordInput.addEventListener("scroll", renderSecretWordMask);
 
 dom.letterBank.addEventListener("click", (event) => {
   const button = event.target.closest("button[data-letter]");
@@ -503,5 +542,8 @@ dom.letterBank.addEventListener("click", (event) => {
 });
 
 dom.resetButton.addEventListener("click", returnToWelcome);
+document.addEventListener("keydown", handleKeyboardGuess);
 
-renderLanguagePreview();
+dom.secretWordInput.readOnly = useReadonlySetupCapture;
+
+syncSetupPreview();

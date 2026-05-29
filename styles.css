@@ -203,6 +203,11 @@ body::before {
   align-items: center;
 }
 
+.masked-input {
+  position: relative;
+  min-width: 0;
+}
+
 .setup-form input {
   width: 100%;
   padding: 1.1rem 1.15rem;
@@ -212,9 +217,61 @@ body::before {
   color: var(--text-main);
   font: 500 1.2rem/1.1 var(--font-display);
   letter-spacing: 0.02em;
-  -webkit-text-security: disc;
   caret-color: var(--accent);
   box-shadow: none;
+}
+
+.secret-input {
+  position: relative;
+  z-index: 1;
+  caret-color: transparent;
+}
+
+.secret-input.is-masked {
+  color: var(--text-main);
+}
+
+.secret-input.use-native-mask {
+  -webkit-text-security: disc;
+}
+
+.masked-input[data-capture-mode="native"] .secret-input {
+  caret-color: var(--accent);
+}
+
+.masked-input[data-capture-mode="native"] .secret-input.is-masked {
+  color: var(--text-main);
+}
+
+.masked-input[data-capture-mode="overlay"] .secret-input {
+  caret-color: var(--accent);
+}
+
+.masked-input[data-capture-mode="overlay"] .secret-input.is-masked {
+  color: transparent;
+}
+
+.secret-input::placeholder {
+  color: var(--text-muted);
+}
+
+.masked-value {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 1.1rem 1.15rem;
+  overflow: hidden;
+  color: var(--text-main);
+  font: 500 1.2rem/1.1 var(--font-display);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.masked-input[data-capture-mode="overlay"][data-masked="true"] .masked-value {
+  opacity: 1;
 }
 
 .setup-form input:focus,
@@ -695,6 +752,28 @@ body::before {
   100% {
     opacity: 0;
     transform: translate3d(var(--drift, 0px), 420px, 0) rotate(var(--rotation, 180deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary-button,
+  .secondary-button,
+  .letter-button,
+  .scene-part,
+  .hangman-face,
+  .confetti-piece {
+    transition: none;
+    animation: none !important;
+  }
+
+  .primary-button:hover,
+  .secondary-button:hover,
+  .letter-button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .confetti-layer {
+    display: none;
   }
 }
 

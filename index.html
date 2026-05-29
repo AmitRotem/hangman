@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A bilingual-friendly hangman game designed for GitHub Pages.">
+  <meta name="description" content="A multilingual hangman game with keyboard guessing and RTL-friendly support, designed for GitHub Pages.">
   <title>Rope &amp; Letters</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,24 +25,32 @@
             <h2>New round</h2>
 
             <form id="setup-form" class="setup-form" novalidate autocomplete="off">
-              <label for="secret-word">Hidden word</label>
+              <label for="secret-word">Hidden word or phrase</label>
               <div class="input-row">
-                <input
-                  id="secret-word"
-                  name="puzzle-word"
-                  type="text"
-                  inputmode="text"
-                  autocomplete="off"
-                  autocapitalize="off"
-                  autocorrect="off"
-                  spellcheck="false"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-bwignore="true"
-                  data-form-type="other"
-                  placeholder="Enter word"
-                  aria-describedby="language-value setup-error"
-                >
+                <div class="masked-input" data-secret-field="true">
+                  <input
+                    id="secret-word"
+                    class="secret-input"
+                    name="puzzle-word"
+                    type="text"
+                    inputmode="text"
+                    autocomplete="off"
+                    aria-autocomplete="none"
+                    autocapitalize="none"
+                    autocorrect="off"
+                    spellcheck="false"
+                    writingsuggestions="false"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    data-gramm="false"
+                    data-gramm_editor="false"
+                    data-form-type="other"
+                    placeholder="Enter word or phrase"
+                    aria-describedby="language-value setup-error"
+                  >
+                  <span id="secret-word-mask" class="masked-value" aria-hidden="true"></span>
+                </div>
                 <button type="submit" class="primary-button">Start game</button>
               </div>
 
@@ -70,7 +78,6 @@
               <line x1="70" y1="280" x2="170" y2="280" class="poster-line"></line>
               <line x1="100" y1="280" x2="100" y2="66" class="poster-line"></line>
               <line x1="100" y1="66" x2="210" y2="66" class="poster-line"></line>
-              <line x1="210" y1="66" x2="210" y2="104" class="poster-line rope"></line>
               <circle cx="210" cy="132" r="26" class="poster-line"></circle>
               <line x1="210" y1="158" x2="210" y2="224" class="poster-line"></line>
               <line x1="210" y1="178" x2="174" y2="202" class="poster-line"></line>
@@ -79,13 +86,13 @@
               <line x1="210" y1="224" x2="240" y2="266" class="poster-line"></line>
               <circle cx="200" cy="126" r="3.5" class="poster-face"></circle>
               <circle cx="220" cy="126" r="3.5" class="poster-face"></circle>
-              <path d="M196 144 Q210 154 224 144" class="poster-smile"></path>
+              <line x1="198" y1="145" x2="222" y2="145" class="poster-smile"></line>
             </svg>
           </div>
         </div>
       </section>
 
-      <section class="panel game-panel hidden" data-screen="game">
+      <section class="panel game-panel hidden" data-screen="game" tabindex="-1">
         <div class="game-layout">
           <section class="board-card" aria-labelledby="game-language-label">
             <div class="status-ribbon">
@@ -97,7 +104,7 @@
 
             <div class="result-row">
               <div id="celebration-banner" class="celebration-banner hidden" aria-live="polite"></div>
-              <button id="reset-button" class="secondary-button hidden" type="button">Back to welcome</button>
+              <button id="reset-button" class="secondary-button hidden" type="button">Play again</button>
             </div>
 
             <section class="bank-section" aria-labelledby="letter-bank-title">
@@ -183,6 +190,7 @@
     </main>
   </div>
 
+  <script src="logic.js" defer></script>
   <script src="script.js" defer></script>
 </body>
 </html>

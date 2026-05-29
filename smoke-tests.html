@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rope &amp; Letters Smoke Tests</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1017;
+      --panel: #101722;
+      --line: rgba(139, 196, 255, 0.18);
+      --text: #eef4ff;
+      --muted: #9aa8bb;
+      --good: #8fe2b7;
+      --bad: #ff8d98;
+      --accent: #8bc4ff;
+      --radius: 18px;
+      --font: "Heebo", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 2rem;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(139, 196, 255, 0.08), transparent 28%),
+        linear-gradient(180deg, var(--bg) 0%, #111a24 100%);
+    }
+
+    main {
+      width: min(760px, 100%);
+      margin: 0 auto;
+      padding: 1.5rem;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+    }
+
+    h1,
+    p {
+      margin: 0;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    #summary {
+      margin-top: 1rem;
+      padding: 0.9rem 1rem;
+      border-radius: var(--radius);
+      background: rgba(139, 196, 255, 0.08);
+      border: 1px solid var(--line);
+      font-weight: 500;
+    }
+
+    ul {
+      margin: 1rem 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    li {
+      padding: 0.9rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    li.pass {
+      border-color: rgba(143, 226, 183, 0.24);
+      color: var(--good);
+    }
+
+    li.fail {
+      border-color: rgba(255, 141, 152, 0.24);
+      color: var(--bad);
+    }
+
+    code {
+      font-family: Consolas, monospace;
+      font-size: 0.95em;
+    }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500&display=swap" rel="stylesheet">
+  <script src="logic.js" defer></script>
+  <script defer>
+    function assert(condition, message) {
+      if (!condition) {
+        throw new Error(message);
+      }
+    }
+
+    function assertEqual(actual, expected, message) {
+      if (actual !== expected) {
+        throw new Error(`${message} Expected ${expected}, got ${actual}.`);
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const summary = document.querySelector("#summary");
+      const results = document.querySelector("#results");
+      const logic = window.HangmanLogic;
+
+      const tests = [
+        {
+          name: "English words use the English bank",
+          run() {
+            const result = logic.detectLanguage("Hangman");
+            assertEqual(result.id, "english", "English detection failed.");
+            assertEqual(result.bank.length, logic.ASCII_ALPHABET.length, "English bank length mismatch.");
+          }
+        },
+        {
+          name: "Hebrew words normalize final letters",
+          run() {
+            assertEqual(logic.canonicalizeLetter("ך", "hebrew"), "כ", "Hebrew final letter normalization failed.");
+            assertEqual(logic.resolveKeyboardGuess("ך", logic.HEBREW_ALPHABET, "hebrew"), "כ", "Hebrew keyboard resolution failed.");
+          }
+        },
+        {
+          name: "Mixed scripts fall back to a custom bank",
+          run() {
+            const result = logic.detectLanguage("אבC");
+            assertEqual(result.id, "mixed", "Mixed-script detection failed.");
+            assert(result.bank.includes("C"), "Mixed bank should include Latin letters.");
+            assert(result.bank.includes("א"), "Mixed bank should include Hebrew letters.");
+          }
+        },
+        {
+          name: "RTL languages report RTL direction",
+          run() {
+            assertEqual(logic.getLanguageDirection({ id: "arabic", locale: "ar" }), "rtl", "Arabic should be RTL.");
+            assertEqual(logic.getLanguageDirection({ id: "english", locale: "en" }), "ltr", "English should be LTR.");
+          }
+        },
+        {
+          name: "Keyboard guesses map to the current bank",
+          run() {
+            const targetLetters = logic.buildTargetLetters(["H", "e", "l", "l", "o"], "english");
+            assert(targetLetters.has("H"), "Target letters should keep canonical English letters.");
+            assertEqual(logic.resolveKeyboardGuess("k", logic.ASCII_ALPHABET, "english"), "K", "Keyboard resolution should return bank letters.");
+          }
+        }
+      ];
+
+      let passed = 0;
+
+      tests.forEach((test) => {
+        const item = document.createElement("li");
+
+        try {
+          test.run();
+          passed += 1;
+          item.className = "pass";
+          item.textContent = `PASS: ${test.name}`;
+        } catch (error) {
+          item.className = "fail";
+          item.textContent = `FAIL: ${test.name} ${error.message}`;
+        }
+
+        results.append(item);
+      });
+
+      const allPassed = passed === tests.length;
+      summary.textContent = `${passed} / ${tests.length} tests passed`;
+      document.title = allPassed ? "Smoke tests passed" : "Smoke tests failed";
+    });
+  </script>
+</head>
+<body>
+  <main>
+    <h1>Rope &amp; Letters Smoke Tests</h1>
+    <p>These checks cover the shared language detection and keyboard matching logic used by the app.</p>
+    <div id="summary" aria-live="polite">Running tests...</div>
+    <ul id="results" aria-live="polite"></ul>
+  </main>
+</body>
+</html>
