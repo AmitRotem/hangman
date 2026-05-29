@@ -24,12 +24,12 @@
           <div class="hero-copy">
             <h2>New round</h2>
 
-            <form id="setup-form" class="setup-form" novalidate>
+            <form id="setup-form" class="setup-form" novalidate autocomplete="off">
               <label for="secret-word">Hidden word</label>
               <div class="input-row">
                 <input
                   id="secret-word"
-                  name="secret-entry"
+                  name="puzzle-word"
                   type="text"
                   inputmode="text"
                   autocomplete="off"
@@ -38,6 +38,8 @@
                   spellcheck="false"
                   data-lpignore="true"
                   data-1p-ignore="true"
+                  data-bwignore="true"
+                  data-form-type="other"
                   placeholder="Enter word"
                   aria-describedby="language-value setup-error"
                 >
@@ -133,16 +135,16 @@
               <svg id="hangman-svg" viewBox="0 0 260 320" role="img" aria-label="Hangman drawing" data-face="none">
                 <rect x="20" y="18" width="220" height="284" rx="26" class="scene-backdrop"></rect>
                 <g class="hangman-scene">
+                  <line x1="48" y1="278" x2="146" y2="278" class="scene-part" data-segment="floor"></line>
+                  <line x1="82" y1="278" x2="82" y2="46" class="scene-part" data-segment="pole"></line>
+                  <line x1="82" y1="46" x2="170" y2="46" class="scene-part" data-segment="beam"></line>
+                  <line x1="170" y1="46" x2="170" y2="84" class="scene-part rope-part" data-segment="rope"></line>
                   <circle cx="170" cy="108" r="24" class="scene-part" data-segment="head"></circle>
                   <line x1="170" y1="132" x2="170" y2="200" class="scene-part" data-segment="body"></line>
                   <line x1="170" y1="154" x2="136" y2="180" class="scene-part" data-segment="left-arm"></line>
                   <line x1="170" y1="154" x2="204" y2="180" class="scene-part" data-segment="right-arm"></line>
                   <line x1="170" y1="200" x2="140" y2="246" class="scene-part" data-segment="left-leg"></line>
                   <line x1="170" y1="200" x2="200" y2="246" class="scene-part" data-segment="right-leg"></line>
-                  <line x1="48" y1="278" x2="146" y2="278" class="scene-part" data-segment="floor"></line>
-                  <line x1="82" y1="278" x2="82" y2="46" class="scene-part" data-segment="pole"></line>
-                  <line x1="82" y1="46" x2="170" y2="46" class="scene-part" data-segment="beam"></line>
-                  <line x1="170" y1="46" x2="170" y2="84" class="scene-part rope-part" data-segment="rope"></line>
                 </g>
 
                 <g class="hangman-face hangman-face--neutral">

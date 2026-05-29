@@ -10,6 +10,8 @@
   --accent: #8bc4ff;
   --accent-strong: #bedcff;
   --accent-gold: #b6d5ff;
+  --figure: #f3a24d;
+  --sad-eye: #ff5f6d;
   --good: #8fe2b7;
   --bad: #ff8d98;
   --line: rgba(139, 196, 255, 0.16);
@@ -550,6 +552,7 @@ body::before {
 
 .scene-part {
   stroke: var(--accent-strong);
+  stroke-opacity: 1;
   stroke-width: 7;
   opacity: 0;
   stroke-dasharray: 260;
@@ -557,20 +560,31 @@ body::before {
   transform-box: fill-box;
   transform-origin: center;
   transform: scale(0.94);
-  transition: opacity 220ms ease, stroke-dashoffset 340ms ease, transform 340ms ease;
+  transition: opacity 220ms ease, stroke 220ms ease, stroke-opacity 220ms ease, stroke-dashoffset 340ms ease, transform 340ms ease;
+}
+
+.scene-part[data-segment="head"],
+.scene-part[data-segment="body"],
+.scene-part[data-segment="left-arm"],
+.scene-part[data-segment="right-arm"],
+.scene-part[data-segment="left-leg"],
+.scene-part[data-segment="right-leg"] {
+  stroke: var(--figure);
 }
 
 .scene-part[data-visible="true"] {
   opacity: 1;
   stroke-dashoffset: 0;
   transform: scale(1);
+}
+
+.scene-part[data-visible="true"][data-animate="true"] {
   animation: scene-reveal 340ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   animation-delay: calc(var(--reveal-order, 0) * 35ms);
 }
 
 .scene-part[data-visible="true"][data-soft="true"] {
-  opacity: 0.42;
-  animation-name: scene-reveal-soft;
+  stroke-opacity: 0.42;
 }
 
 .rope-part[data-visible="true"] {
@@ -587,6 +601,10 @@ body::before {
 .face-stroke {
   stroke: var(--text-main);
   stroke-width: 4.5;
+}
+
+.hangman-face--sad line.face-stroke {
+  stroke: var(--sad-eye);
 }
 
 #hangman-svg[data-face="neutral"] .hangman-face--neutral,
@@ -660,18 +678,6 @@ body::before {
 
   100% {
     opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes scene-reveal-soft {
-  0% {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-
-  100% {
-    opacity: 0.42;
     transform: scale(1);
   }
 }

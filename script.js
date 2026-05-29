@@ -4,6 +4,7 @@ const SEGMENT_ORDER = ["head", "body", "left-arm", "right-arm", "left-leg", "rig
 const BODY_SEGMENTS = SEGMENT_ORDER.slice(0, 6);
 const GALLOWS_SEGMENTS = SEGMENT_ORDER.slice(BODY_SEGMENTS.length);
 const RTL_LANGUAGE_IDS = new Set(["hebrew", "arabic"]);
+const SOFT_GALLOWS_STROKE = "rgba(190, 220, 255, 0.42)";
 const HEBREW_FINALS = {
   "ך": "כ",
   "ם": "מ",
@@ -48,8 +49,6 @@ const LANGUAGE_PROFILES = [
 ];
 
 const LETTER_PATTERN = /\p{L}/u;
-const ENGLISH_PATTERN = /^[A-Za-z\s' -]+$/;
-
 const dom = {
   welcomePanel: document.querySelector('[data-screen="welcome"]'),
   gamePanel: document.querySelector('[data-screen="game"]'),
@@ -163,7 +162,7 @@ function detectLanguage(text) {
     };
   }
 
-  if (match.id === "english" && !ENGLISH_PATTERN.test(text)) {
+  if (match.id === "english" && !letters.every((character) => /[A-Za-z]/.test(character))) {
     return {
       id: "latin",
       label: "Latin",
@@ -407,13 +406,17 @@ function renderHangman() {
   const visibleSet = new Set(visibleSegments);
 
   dom.hangmanParts.forEach((segment) => {
+    const wasVisible = segment.dataset.visible === "true";
     const segmentIndex = visibleSegments.indexOf(segment.dataset.segment);
     const shouldShow = visibleSet.has(segment.dataset.segment);
     const shouldSoftShow = state.status === "won" && GALLOWS_SEGMENTS.includes(segment.dataset.segment) && shouldShow;
 
     segment.dataset.visible = String(shouldShow);
+    segment.dataset.animate = String(shouldShow && !wasVisible);
     segment.dataset.soft = String(shouldSoftShow);
     segment.style.setProperty("--reveal-order", segmentIndex === -1 ? "0" : String(segmentIndex));
+    segment.style.opacity = shouldShow ? "1" : "0";
+    segment.style.stroke = shouldSoftShow ? SOFT_GALLOWS_STROKE : "";
   });
 
   if (state.status === "won") {
