@@ -21,10 +21,10 @@
   --radius-xl: 24px;
   --radius-lg: 18px;
   --radius-md: 14px;
-  --slot-gap-size: clamp(0.45rem, 1.8vw, 0.8rem);
-  --word-gap-size: clamp(0.8rem, 3vw, 1.35rem);
-  --slot-width: clamp(2.45rem, 5.6vw, 4.3rem);
-  --slot-height: clamp(3.1rem, 7.2vw, 5rem);
+  --slot-gap-size: clamp(0.3rem, 1.8vw, 0.0rem);
+  --word-gap-size: clamp(0.8rem, 3vw, 3.0rem);
+  --slot-width: clamp(2.45rem, 5.6vw, 3.44rem);
+  --slot-height: clamp(3.1rem, 7.2vw, 4.00rem);
   --slot-font-size: clamp(1.45rem, 3.9vw, 2.35rem);
 }
 
