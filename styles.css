@@ -21,6 +21,11 @@
   --radius-xl: 24px;
   --radius-lg: 18px;
   --radius-md: 14px;
+  --slot-gap-size: clamp(0.45rem, 1.8vw, 0.8rem);
+  --word-gap-size: clamp(0.8rem, 3vw, 1.35rem);
+  --slot-width: clamp(2.45rem, 5.6vw, 4.3rem);
+  --slot-height: clamp(3.1rem, 7.2vw, 5rem);
+  --slot-font-size: clamp(1.45rem, 3.9vw, 2.35rem);
 }
 
 * {
@@ -36,6 +41,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-body);
   color: var(--text-main);
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top left, rgba(139, 196, 255, 0.08), transparent 28%),
     linear-gradient(180deg, var(--page-bg) 0%, var(--page-bg-soft) 100%);
@@ -60,10 +66,23 @@ body::before {
 
 .topbar {
   display: flex;
-  align-items: end;
-  justify-content: flex-start;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-inline-start: auto;
+}
+
+.topbar-button {
+  min-width: 9.5rem;
+  white-space: nowrap;
 }
 
 .brand-block h1,
@@ -436,25 +455,35 @@ body::before {
 .word-slots {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
+  column-gap: 0;
+  row-gap: var(--slot-gap-size);
   align-items: flex-end;
   min-height: 5.5rem;
+  max-width: 100%;
 }
 
 .word-slots[dir="rtl"] {
   direction: rtl;
 }
 
+.word-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: var(--slot-gap-size);
+  margin-inline-end: calc(var(--trailing-gap-count, 0) * var(--word-gap-size));
+}
+
 .slot {
   display: grid;
   place-items: center;
-  width: clamp(3.4rem, 5.6vw, 4.3rem);
-  height: clamp(4.2rem, 7.2vw, 5rem);
+  flex: 0 0 auto;
+  width: var(--slot-width);
+  height: var(--slot-height);
   border-radius: 14px;
   border: 1px solid var(--line);
   background: var(--surface-raised);
   box-shadow: none;
-  font: 500 2.35rem/1 var(--font-display);
+  font: 500 var(--slot-font-size)/1 var(--font-display);
 }
 
 .slot:not(.revealed) {
@@ -466,7 +495,7 @@ body::before {
 }
 
 .slot-gap {
-  width: 1.35rem;
+  width: 0;
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -583,11 +612,12 @@ body::before {
 }
 
 .hangman-card {
+  min-width: 0;
   padding: 1rem;
 }
 
 .hangman-frame {
-  min-height: 360px;
+  min-height: clamp(220px, 34vw, 360px);
   display: grid;
   place-items: center;
   border-radius: var(--radius-lg);
@@ -778,7 +808,6 @@ body::before {
 }
 
 @media (max-width: 920px) {
-  .topbar,
   .hero-layout,
   .game-layout,
   .input-row,
@@ -787,11 +816,29 @@ body::before {
   }
 
   .topbar {
+    flex-direction: column;
     align-items: start;
+    gap: 1rem;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .topbar-button {
+    width: 100%;
   }
 
   .input-row {
     display: grid;
+  }
+
+  .game-layout {
+    gap: 1rem;
+  }
+
+  .hangman-card {
+    order: -1;
   }
 
   .primary-button,
@@ -811,17 +858,80 @@ body::before {
     padding: 1rem;
   }
 
+  .brand-block h1 {
+    font-size: clamp(2.15rem, 12vw, 3.1rem);
+  }
+
+  .hero-copy h2 {
+    font-size: clamp(1.9rem, 9vw, 2.5rem);
+  }
+
   .status-ribbon {
     border-radius: 24px;
   }
 
+  .word-slots {
+    row-gap: 0.55rem;
+  }
+
+  .word-group {
+    gap: 0.55rem;
+  }
+
   .slot {
-    width: 3.2rem;
-    height: 3.8rem;
-    font-size: 1.95rem;
+    width: clamp(2.2rem, 12vw, 3.2rem);
+    height: clamp(2.8rem, 14vw, 3.8rem);
+    font-size: clamp(1.35rem, 7vw, 1.95rem);
   }
 
   .letter-bank {
     grid-template-columns: repeat(auto-fit, minmax(2.5rem, 1fr));
+    gap: 0.5rem;
+  }
+
+  .letter-button {
+    min-height: 3.35rem;
+    font-size: 1.3rem;
+  }
+
+  .hangman-card {
+    padding: 0.8rem;
+  }
+
+  .hangman-frame {
+    min-height: 200px;
+    padding: 0.5rem;
+  }
+
+  .legend-row {
+    padding: 0.75rem 0.8rem;
+  }
+
+  .used-chip {
+    min-width: 2.2rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --slot-gap-size: 0.35rem;
+    --word-gap-size: 0.65rem;
+    --slot-width: clamp(1.65rem, 8.8vw, 2.35rem);
+    --slot-height: clamp(2.15rem, 11vw, 3rem);
+    --slot-font-size: clamp(1rem, 5.6vw, 1.55rem);
+  }
+
+  .status-ribbon {
+    padding: 0.8rem 0.9rem;
+  }
+
+  #game-language-label {
+    font-size: 1.1rem;
+  }
+
+  #status-message {
+    font-size: 0.95rem;
   }
 }

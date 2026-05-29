@@ -16,6 +16,7 @@ const dom = {
   welcomePanel: document.querySelector('[data-screen="welcome"]'),
   gamePanel: document.querySelector('[data-screen="game"]'),
   setupForm: document.querySelector("#setup-form"),
+  fullscreenButton: document.querySelector("#fullscreen-button"),
   secretWordField: document.querySelector("[data-secret-field]"),
   secretWordInput: document.querySelector("#secret-word"),
   secretWordMask: document.querySelector("#secret-word-mask"),
@@ -78,15 +79,65 @@ function formatMaskedSecret(value) {
   return [...value].map((character) => (/\s/u.test(character) ? character : "•")).join("");
 }
 
+function isFullscreenSupported() {
+  return Boolean(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+}
+
+function isFullscreenActive() {
+  return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+}
+
+function updateFullscreenButton() {
+  if (!dom.fullscreenButton) {
+    return;
+  }
+
+  const supported = isFullscreenSupported();
+  const active = isFullscreenActive();
+
+  dom.fullscreenButton.classList.toggle("hidden", !supported);
+  dom.fullscreenButton.disabled = !supported;
+  dom.fullscreenButton.textContent = active ? "Exit full screen" : "Full screen";
+  dom.fullscreenButton.setAttribute("aria-pressed", String(active));
+}
+
+async function toggleFullscreen() {
+  if (!isFullscreenSupported()) {
+    return;
+  }
+
+  const root = document.documentElement;
+
+  try {
+    if (isFullscreenActive()) {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } else if (root.requestFullscreen) {
+      await root.requestFullscreen();
+    } else if (root.webkitRequestFullscreen) {
+      root.webkitRequestFullscreen();
+    }
+  } catch {
+    updateFullscreenButton();
+    return;
+  }
+
+  updateFullscreenButton();
+}
+
 function renderSecretWordMask() {
   const value = state.setupAnswer;
   const hasValue = value.length > 0;
   const captureMode = useReadonlySetupCapture ? "readonly" : supportsNativeSecretMask ? "native" : "overlay";
+  const keepMasked = captureMode !== "readonly";
 
   dom.secretWordField.dataset.masked = String(hasValue);
   dom.secretWordField.dataset.captureMode = captureMode;
   dom.secretWordField.dir = dom.secretWordInput.dir;
-  dom.secretWordInput.classList.toggle("is-masked", hasValue);
+  dom.secretWordInput.classList.toggle("is-masked", keepMasked || hasValue);
 
   if (captureMode === "readonly") {
     dom.secretWordInput.classList.remove("use-native-mask");
@@ -95,7 +146,7 @@ function renderSecretWordMask() {
     return;
   }
 
-  dom.secretWordInput.classList.toggle("use-native-mask", captureMode === "native" && hasValue);
+  dom.secretWordInput.classList.toggle("use-native-mask", captureMode === "native");
   dom.secretWordInput.value = value;
   dom.secretWordMask.dir = dom.secretWordInput.dir;
   dom.secretWordMask.textContent = captureMode === "overlay" && hasValue ? formatMaskedSecret(value) : "";
@@ -361,22 +412,45 @@ function handleKeyboardGuess(event) {
 function renderWordSlots() {
   dom.wordSlots.replaceChildren();
   const revealAll = state.status === "won" || state.status === "lost";
+  const direction = getLanguageDirection();
+  let currentWordGroup = null;
 
-  state.answerChars.forEach((character) => {
-    const slot = document.createElement("span");
-    slot.dir = "auto";
+  function ensureWordGroup() {
+    if (currentWordGroup) {
+      return currentWordGroup;
+    }
 
-    if (character === " ") {
-      slot.className = "slot slot-gap";
-      slot.setAttribute("aria-hidden", "true");
-      dom.wordSlots.append(slot);
+    currentWordGroup = document.createElement("span");
+    currentWordGroup.className = "word-group";
+    currentWordGroup.dir = direction;
+    currentWordGroup.style.setProperty("--trailing-gap-count", "0");
+    dom.wordSlots.append(currentWordGroup);
+    return currentWordGroup;
+  }
+
+  function incrementWordGap() {
+    if (!currentWordGroup) {
       return;
     }
+
+    const currentGap = Number(currentWordGroup.style.getPropertyValue("--trailing-gap-count") || "0");
+    currentWordGroup.style.setProperty("--trailing-gap-count", String(currentGap + 1));
+    currentWordGroup = null;
+  }
+
+  state.answerChars.forEach((character) => {
+    if (character === " ") {
+      incrementWordGap();
+      return;
+    }
+
+    const slot = document.createElement("span");
+    slot.dir = "auto";
 
     if (!isGuessableCharacter(character)) {
       slot.className = "slot slot-fixed revealed";
       slot.textContent = character;
-      dom.wordSlots.append(slot);
+      ensureWordGroup().append(slot);
       return;
     }
 
@@ -385,7 +459,7 @@ function renderWordSlots() {
 
     slot.className = `slot${revealed ? " revealed" : ""}`;
     slot.textContent = revealed ? character : "_";
-    dom.wordSlots.append(slot);
+    ensureWordGroup().append(slot);
   });
 }
 
@@ -543,7 +617,16 @@ dom.letterBank.addEventListener("click", (event) => {
 
 dom.resetButton.addEventListener("click", returnToWelcome);
 document.addEventListener("keydown", handleKeyboardGuess);
+document.addEventListener("fullscreenchange", updateFullscreenButton);
+document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+
+if (dom.fullscreenButton) {
+  dom.fullscreenButton.addEventListener("click", () => {
+    void toggleFullscreen();
+  });
+}
 
 dom.secretWordInput.readOnly = useReadonlySetupCapture;
 
 syncSetupPreview();
+updateFullscreenButton();
