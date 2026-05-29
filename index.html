@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A bilingual-friendly hangman game designed for GitHub Pages.">
+  <title>Rope &amp; Letters</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <span class="eyebrow">GitHub Pages Hangman</span>
+        <h1>Rope &amp; Letters</h1>
+      </div>
+      <p class="topbar-copy">Enter a hidden word, let the game detect its language, and guess through a hand-built hangman scene.</p>
+    </header>
+
+    <main class="view-stack">
+      <section class="panel welcome-panel" data-screen="welcome">
+        <div class="hero-layout">
+          <div class="hero-copy">
+            <span class="section-tag">Secret Setup</span>
+            <h2>Start with a masked word or phrase.</h2>
+            <p class="lead-copy">This field stays hidden while the first player types. The game reads the text, detects the language automatically, and prepares the matching letter bank before play begins.</p>
+
+            <form id="setup-form" class="setup-form" novalidate>
+              <label for="secret-word">Hidden word</label>
+              <div class="input-row">
+                <input
+                  id="secret-word"
+                  name="secret-word"
+                  type="password"
+                  inputmode="text"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="Type the secret word here"
+                  aria-describedby="secret-help language-value setup-error"
+                >
+                <button type="submit" class="primary-button">Start game</button>
+              </div>
+
+              <div class="setup-meta">
+                <div class="language-pill" aria-live="polite">
+                  <span class="pill-label">Detected language</span>
+                  <strong id="language-value">Waiting for input</strong>
+                </div>
+                <p id="secret-help" class="subtle-copy">The input uses a concealed field so the answer stays private while it is being entered.</p>
+              </div>
+
+              <p id="setup-error" class="error-copy" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="illustration-card">
+            <svg id="welcome-illustration" viewBox="0 0 320 360" aria-hidden="true">
+              <defs>
+                <linearGradient id="posterGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffd97a"></stop>
+                  <stop offset="100%" stop-color="#ff8a5b"></stop>
+                </linearGradient>
+              </defs>
+              <rect x="22" y="22" width="276" height="316" rx="32" class="poster-shell"></rect>
+              <circle cx="250" cy="80" r="34" fill="url(#posterGlow)" opacity="0.85"></circle>
+              <line x1="70" y1="280" x2="170" y2="280" class="poster-line"></line>
+              <line x1="100" y1="280" x2="100" y2="66" class="poster-line"></line>
+              <line x1="100" y1="66" x2="210" y2="66" class="poster-line"></line>
+              <line x1="210" y1="66" x2="210" y2="104" class="poster-line rope"></line>
+              <circle cx="210" cy="132" r="26" class="poster-line"></circle>
+              <line x1="210" y1="158" x2="210" y2="224" class="poster-line"></line>
+              <line x1="210" y1="178" x2="174" y2="202" class="poster-line"></line>
+              <line x1="210" y1="178" x2="246" y2="202" class="poster-line"></line>
+              <line x1="210" y1="224" x2="180" y2="266" class="poster-line"></line>
+              <line x1="210" y1="224" x2="240" y2="266" class="poster-line"></line>
+              <circle cx="200" cy="126" r="3.5" class="poster-face"></circle>
+              <circle cx="220" cy="126" r="3.5" class="poster-face"></circle>
+              <path d="M196 144 Q210 154 224 144" class="poster-smile"></path>
+            </svg>
+            <p class="illustration-caption">Wrong guesses reveal the scene in this order: stick figure first, then floor, pole, overhead beam, and rope.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel game-panel hidden" data-screen="game">
+        <div class="game-layout">
+          <section class="board-card" aria-labelledby="game-language-label">
+            <div class="status-ribbon">
+              <strong id="game-language-label">Language</strong>
+              <span id="status-message">Choose a letter to start guessing.</span>
+            </div>
+
+            <div id="word-slots" class="word-slots" aria-live="polite"></div>
+
+            <div class="result-row">
+              <div id="celebration-banner" class="celebration-banner hidden" aria-live="polite"></div>
+              <button id="reset-button" class="secondary-button hidden" type="button">Back to welcome</button>
+            </div>
+
+            <section class="bank-section" aria-labelledby="letter-bank-title">
+              <div class="section-header">
+                <div>
+                  <h3 id="letter-bank-title">Letter bank</h3>
+                  <p>Pick one letter at a time.</p>
+                </div>
+              </div>
+              <div id="letter-bank" class="letter-bank" role="group" aria-label="Available letters"></div>
+            </section>
+
+            <section class="bank-section used-section" aria-labelledby="used-bank-title">
+              <div class="section-header">
+                <div>
+                  <h3 id="used-bank-title">Used letters</h3>
+                  <p id="used-summary">No letters used yet.</p>
+                </div>
+              </div>
+
+              <div class="used-columns">
+                <div>
+                  <span class="used-label">Correct</span>
+                  <div id="used-correct" class="used-bank"></div>
+                </div>
+                <div>
+                  <span class="used-label">Wrong</span>
+                  <div id="used-wrong" class="used-bank"></div>
+                </div>
+              </div>
+            </section>
+          </section>
+
+          <aside class="hangman-card">
+            <div class="hangman-frame">
+              <svg id="hangman-svg" viewBox="0 0 260 320" role="img" aria-label="Hangman drawing" data-face="none">
+                <rect x="20" y="18" width="220" height="284" rx="26" class="scene-backdrop"></rect>
+                <g class="hangman-scene">
+                  <circle cx="170" cy="108" r="24" class="scene-part" data-segment="head"></circle>
+                  <line x1="170" y1="132" x2="170" y2="200" class="scene-part" data-segment="body"></line>
+                  <line x1="170" y1="154" x2="136" y2="180" class="scene-part" data-segment="left-arm"></line>
+                  <line x1="170" y1="154" x2="204" y2="180" class="scene-part" data-segment="right-arm"></line>
+                  <line x1="170" y1="200" x2="140" y2="246" class="scene-part" data-segment="left-leg"></line>
+                  <line x1="170" y1="200" x2="200" y2="246" class="scene-part" data-segment="right-leg"></line>
+                  <line x1="48" y1="278" x2="146" y2="278" class="scene-part" data-segment="floor"></line>
+                  <line x1="82" y1="278" x2="82" y2="46" class="scene-part" data-segment="pole"></line>
+                  <line x1="82" y1="46" x2="170" y2="46" class="scene-part" data-segment="beam"></line>
+                  <line x1="170" y1="46" x2="170" y2="84" class="scene-part rope-part" data-segment="rope"></line>
+                </g>
+
+                <g class="hangman-face hangman-face--neutral">
+                  <circle cx="160" cy="102" r="3" class="face-stroke"></circle>
+                  <circle cx="180" cy="102" r="3" class="face-stroke"></circle>
+                  <line x1="158" y1="118" x2="182" y2="118" class="face-stroke"></line>
+                </g>
+
+                <g class="hangman-face hangman-face--happy">
+                  <circle cx="160" cy="102" r="3" class="face-stroke"></circle>
+                  <circle cx="180" cy="102" r="3" class="face-stroke"></circle>
+                  <path d="M156 116 Q170 128 184 116" class="face-stroke"></path>
+                </g>
+
+                <g class="hangman-face hangman-face--sad">
+                  <line x1="156" y1="100" x2="164" y2="108" class="face-stroke"></line>
+                  <line x1="164" y1="100" x2="156" y2="108" class="face-stroke"></line>
+                  <line x1="176" y1="100" x2="184" y2="108" class="face-stroke"></line>
+                  <line x1="184" y1="100" x2="176" y2="108" class="face-stroke"></line>
+                  <path d="M156 124 Q170 114 184 124" class="face-stroke"></path>
+                </g>
+              </svg>
+            </div>
+
+            <div class="legend">
+              <div class="legend-row">
+                <span>Wrong guesses</span>
+                <strong id="mistake-count">0 / 10</strong>
+              </div>
+              <div class="legend-row">
+                <span>Finish state</span>
+                <strong>Happy face on win, sad face on loss</strong>
+              </div>
+            </div>
+
+            <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
